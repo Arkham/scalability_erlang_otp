@@ -1,7 +1,7 @@
 -module(frequency).
 -behaviour(gen_server).
 
--export([start/0, init/1, allocate/0, deallocate/1]).
+-export([start/0, init/1, allocate/0, deallocate/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2]).
 
 % Public API
 
@@ -29,7 +29,7 @@ handle_call({allocate, Pid}, _From, Frequencies) ->
 
 handle_cast({deallocate, Freq}, Frequencies) ->
   NewFrequencies = deallocate(Frequencies, Freq),
-  {noreply, NewFrequencies}.
+  {noreply, NewFrequencies};
 handle_cast(stop, LoopData) ->
   {stop, normal, LoopData}.
 
@@ -54,5 +54,5 @@ allocate({[Freq|Free], Allocated}, Pid) ->
   {{Free, [{Freq, Pid}|Allocated]}, {ok, Freq}}.
 
 deallocate({Free, Allocated}, Freq) ->
-  NewAllocated = lists:keydelete(Allocated, Freq, 0),
+  NewAllocated = lists:keydelete(Freq, 1, Allocated),
   {[Freq|Free], NewAllocated}.
