@@ -2,14 +2,14 @@
 -behaviour(gen_fsm).
 
 -export([start_link/0, stop/0]).
--export([init/1, handle_event/3, selection/2, payment/2, remove/2, terminate/3]).
+-export([init/1, handle_sync_event/4, selection/2, payment/2, remove/2, terminate/3]).
 -export([tea/0, espresso/0, americano/0, cappuccino/0, pay/1, cancel/0, cup_removed/0]).
 
 -define(TIMEOUT, 10000).
 
 start_link() -> gen_fsm:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-stop() -> gen_fsm:send_all_state_event(?MODULE, stop).
+stop() -> gen_fsm:sync_send_all_state_event(?MODULE, stop).
 
 tea()        -> gen_fsm:send_event(?MODULE, {selection, tea,        100}).
 espresso()   -> gen_fsm:send_event(?MODULE, {selection, espresso,   100}).
@@ -26,9 +26,8 @@ init([]) ->
   process_flag(trap_exit, true),
   {ok, selection, null}.
 
-handle_event(stop, _State, LoopData) ->
-  io:format("handle_event~n", []),
-  {stop, normal, LoopData}.
+handle_sync_event(stop, _From, _State, LoopData) ->
+  {stop, normal, ok, LoopData}.
 
 selection({selection, Type, Price}, _LoopData) ->
   hw:display("Please pay: ~w", [Price]),
@@ -68,8 +67,6 @@ remove(_Other, LoopData) ->
   {next_state, remove, LoopData}.
 
 terminate(_Reason, payment, {_Type, _Price, Paid}) ->
-  io:format("terminate~n", []),
   hw:return_change(Paid);
 terminate(_Reason, _StateName, _LoopData) ->
-  io:format("terminate~n", []),
   ok.
